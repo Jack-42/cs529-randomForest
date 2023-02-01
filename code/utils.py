@@ -14,15 +14,18 @@ def entropy(s: pd.Series) -> float:
     ent = -np.sum(ent_vals)
     return ent
 
+
 def gini(s: pd.Series) -> float:
     return 1.0 - np.sum(get_proportions(s) ** 2)
+
 
 def misclassification_error(s: pd.Series) -> float:
     return 1.0 - np.max(get_proportions(s))
 
+
 def information_gain(df: pd.DataFrame, attribute: str, metric_fn) -> float:
     def helper(s, s_v):
-        return (len(s) / len(s_v)) * metric_fn(s_v['class'])
+        return (len(s_v) / len(s)) * metric_fn(s_v['class'])
 
     s_impurity = metric_fn(df['class'])
     vals_a = set(df[attribute])
@@ -31,3 +34,11 @@ def information_gain(df: pd.DataFrame, attribute: str, metric_fn) -> float:
         sv = df[df[attribute] == v]
         gain_sum += helper(df, sv)
     return s_impurity - gain_sum
+
+
+if __name__ == "__main__":
+    pth = "../data/agaricus-lepiota-training.csv"
+    df = pd.read_csv(pth)
+    metric = entropy
+    gsa = information_gain(df, 'gill-size', metric)
+    print(gsa)
