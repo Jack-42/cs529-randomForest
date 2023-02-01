@@ -10,10 +10,15 @@ def get_proportions(s: pd.Series) -> pd.Series:
 
 def entropy(s: pd.Series) -> float:
     proportions = get_proportions(s)
-    ent_vals = proportions.map(lambda x: x * np.log2(x))
+    ent_vals = proportions * np.log2(proportions)
     ent = -np.sum(ent_vals)
     return ent
 
+def gini(s: pd.Series) -> float:
+    return 1.0 - np.sum(get_proportions(s) ** 2)
+
+def misclassification_error(s: pd.Series) -> float:
+    return 1.0 - np.max(get_proportions(s))
 
 def information_gain(df: pd.DataFrame, attribute: str, metric_fn) -> float:
     def helper(s, s_v):
