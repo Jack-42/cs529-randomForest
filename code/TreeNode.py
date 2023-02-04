@@ -9,6 +9,11 @@ class TreeNode:
         self.target = target
         self.attribute = None
 
+    def __init__(self):
+        self.target = None
+        self.attribute = None
+        self.branches = {}
+
     def addBranch(self, value, node):
         self.branches[value] = node
 
@@ -16,4 +21,4 @@ class TreeNode:
         return self.branches[value]
 
     def isLeaf(self):
-        return self.attribute == None
+        return self.attribute is None
