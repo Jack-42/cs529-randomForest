@@ -23,11 +23,12 @@ def misclassification_error(s: pd.Series) -> float:
     return 1.0 - np.max(get_proportions(s))
 
 
-def information_gain(df: pd.DataFrame, attribute: str, metric_fn) -> float:
+def information_gain(df: pd.DataFrame, attribute: str, metric_fn,
+                     class_col: str = "class") -> float:
     def helper(s, s_v):
-        return (len(s_v) / len(s)) * metric_fn(s_v['class'])
+        return (len(s_v) / len(s)) * metric_fn(s_v[class_col])
 
-    s_impurity = metric_fn(df['class'])
+    s_impurity = metric_fn(df[class_col])
     vals_a = set(df[attribute])
     gain_sum = 0
     for v in vals_a:
@@ -36,9 +37,25 @@ def information_gain(df: pd.DataFrame, attribute: str, metric_fn) -> float:
     return s_impurity - gain_sum
 
 
+def get_best_attribute(df: pd.DataFrame, metric_fn,
+                       class_col: str = "class") -> str:
+    """
+    Given a df, return the attribute which gave the highest information gain
+    :param df: pandas Dataframe, attributes are columns
+    :param metric_fn: function that returns a float
+    :param class_col: str, the column where the class label is
+    :return: str, the column which gave the highest info gain
+    """
+    attrs = df.columns.drop([class_col])
+    info_gains = attrs.map(lambda a: information_gain(df, a, metric_fn))
+    max_idx = np.argmax(info_gains)
+    best_atr = attrs[max_idx]
+    return best_atr
+
+
 if __name__ == "__main__":
     pth = "../data/agaricus-lepiota-training.csv"
-    df = pd.read_csv(pth)
+    df1 = pd.read_csv(pth)
     metric = entropy
-    gsa = information_gain(df, 'gill-size', metric)
-    print(gsa)
+    df1 = df1.drop(columns="id")
+    print(get_best_attribute(df1, metric))
