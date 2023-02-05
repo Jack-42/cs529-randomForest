@@ -1,6 +1,8 @@
 import pandas as pd
-from utils import get_best_attribute
+
 from TreeNode import TreeNode
+from utils import get_best_attribute
+from utils import get_chi2_statistic, get_chi2_critical
 
 """
 @author: Jack Ringer, Mike Adams
@@ -11,7 +13,7 @@ Contains methods for training a decision tree using the ID3 algorithm.
 
 
 class DecisionTree:
-    def __init__(self, metric_fn):
+    def __init__(self, metric_fn, alpha: float):
         """
         Create a decision tree. Will be initialized w/ empty root node
         :param metric_fn: function->float, metric used to calculate
@@ -19,6 +21,7 @@ class DecisionTree:
         """
         self.root = TreeNode()
         self.metric_fn = metric_fn
+        self.alpha = alpha
 
     def train(self, df: pd.DataFrame, cur_node: TreeNode,
               class_col: str = "class", lvl=0, max_lvls=3):
@@ -32,7 +35,8 @@ class DecisionTree:
         :param max_lvls: (TEMPORARY) int, max level of tree
         :return: TreeNode
         """
-        if len(set(df[class_col])) == 1:
+        n_classes = len(set(df[class_col]))
+        if n_classes == 1:
             # examples are homogeneous (all + or all -)
             label = df[class_col].iloc[0]
             cur_node.target = label
@@ -43,12 +47,24 @@ class DecisionTree:
             return cur_node
 
         a = get_best_attribute(df, metric_fn=self.metric_fn)
-        cur_node.attribute = a
         a_vals = set(df[a])
+        splits = {}
+        for vi in a_vals:
+            examples_vi = df[df[a] == vi].drop(columns=[a])
+            splits[vi] = examples_vi
+        chi2 = get_chi2_statistic(df, pd.Series(splits.values()))
+        chi2_critical = get_chi2_critical(self.alpha, n_classes,
+                                          len(a_vals))
+        if chi2 < chi2_critical:
+            # split doesn't provide enough useful info
+            cur_node.target = df[class_col].mode().loc[0]
+            return cur_node
+
+        cur_node.attribute = a
         for vi in a_vals:
             nxt_node = TreeNode()
             cur_node.addBranch(vi, nxt_node)
-            examples_vi = df[df[a] == vi].drop(columns=[a])
+            examples_vi = splits[vi]
             if len(examples_vi) == 0:
                 # examples is empty
                 nxt_node.target = df[class_col].mode().loc[0]
@@ -56,14 +72,15 @@ class DecisionTree:
                 self.train(examples_vi, nxt_node, lvl=lvl + 1)
         return cur_node
 
-    def classify(self, df: pd.DataFrame, cur_node: TreeNode, 
-                 id_col: str = "id", class_col: str = "class", out=None) -> pd.DataFrame:
+    def classify(self, df: pd.DataFrame, cur_node: TreeNode,
+                 id_col: str = "id", class_col: str = "class",
+                 out=None) -> pd.DataFrame:
         # Keep id column when calling
-        if out == None:
-            out = df[id_col].copy(deep=True)
+        if out is None:
+            out = df[[id_col, class_col]].copy(deep=True)
+            out = out.set_index(id_col)
         if cur_node.isLeaf():
-            for id in df[id_col]:
-                out[out[id_col] == id][class_col] = cur_node.target
+            out.loc[df[id_col]] = cur_node.target
             return out
         attr = cur_node.attribute
         for val in set(df[attr]):
@@ -71,16 +88,19 @@ class DecisionTree:
             if len(df_val) == 0:
                 # no examples to classify
                 continue
-            out = self.classify(df_val, cur_node.next(val), id_col=id_col, class_col=class_col, out=out)
+            out = self.classify(df_val, cur_node.next(val), id_col=id_col,
+                                class_col=class_col, out=out)
         return out
+
 
 if __name__ == "__main__":
     from utils import entropy
 
     pth = "../data/agaricus-lepiota-training.csv"
     df1 = pd.read_csv(pth)
-    df1 = df1.drop(columns="id")  # this is important!
+    df_train = df1.drop(columns="id")  # this is important!
     metric = entropy
-    dtree = DecisionTree(metric)
-    dtree.train(df1, dtree.root)
-    print(dtree.root.branches)  # best attribute is odor, keys are vals
+    dtree = DecisionTree(metric, 0.01)
+    dtree.train(df_train, dtree.root)
+    print("done train")
+    print(dtree.classify(df1, dtree.root).head())
