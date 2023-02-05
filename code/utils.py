@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 
-
 def get_proportions(s: pd.Series) -> pd.Series:
     v_counts = s.value_counts()
     s_len = len(s)
@@ -52,6 +51,18 @@ def get_best_attribute(df: pd.DataFrame, metric_fn,
     best_atr = attrs[max_idx]
     return best_atr
 
+def chi2_statistic(df_parent: pd.DataFrame, df_child: pd.DataFrame, class_col: str = "class") -> float:
+    parent_vals = set(df_parent[class_col])
+    parent_counts = []
+    child_counts = []
+    # manually computing to handle case where child is missing class
+    for val in parent_vals:
+        parent_counts.append(float(len(df_parent[df_parent[class_col] == val])))
+        child_counts.append(float(len(df_child[df_child[class_col] == val])))
+    np_p_counts = np.array(parent_counts)
+    np_c_counts = np.array(child_counts)
+    np_expected_c_counts = (np_p_counts / np.sum(np_p_counts)) * np_c_counts
+    return np.sum(((np_expected_c_counts - np_c_counts) ** 2) / np_expected_c_counts)
 
 if __name__ == "__main__":
     pth = "../data/agaricus-lepiota-training.csv"
