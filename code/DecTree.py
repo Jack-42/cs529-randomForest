@@ -40,6 +40,7 @@ class DecisionTree:
             # examples are homogeneous (all + or all -)
             label = df[class_col].iloc[0]
             cur_node.target = label
+            return cur_node
         attrs = df.columns.drop([class_col])
         if len(attrs) == 0 or lvl >= max_lvls:
             # attributes empty, label = most common class label left
