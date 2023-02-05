@@ -56,6 +56,23 @@ class DecisionTree:
                 self.train(examples_vi, nxt_node, lvl=lvl + 1)
         return cur_node
 
+    def classify(self, df: pd.DataFrame, cur_node: TreeNode, 
+                 id_col: str = "id", class_col: str = "class", out=None) -> pd.DataFrame:
+        # Keep id column when calling
+        if out == None:
+            out = df[id_col].copy(deep=True)
+        if cur_node.isLeaf():
+            for id in df[id_col]:
+                out[out[id_col] == id][class_col] = cur_node.target
+            return out
+        attr = cur_node.attribute
+        for val in set(df[attr]):
+            df_val = df[df[attr] == val]
+            if len(df_val) == 0:
+                # no examples to classify
+                continue
+            out = self.classify(df_val, cur_node.next(val), id_col=id_col, class_col=class_col, out=out)
+        return out
 
 if __name__ == "__main__":
     from utils import entropy
