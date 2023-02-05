@@ -63,7 +63,7 @@ def chi2_statistic(df_parent: pd.DataFrame, df_child: pd.DataFrame, class_col: s
         child_counts.append(float(len(df_child[df_child[class_col] == val])))
     np_p_counts = np.array(parent_counts)
     np_c_counts = np.array(child_counts)
-    np_expected_c_counts = (np_p_counts / np.sum(np_p_counts)) * np_c_counts
+    np_expected_c_counts = (np_p_counts / np.sum(np_p_counts)) * np.sum(np_c_counts)
     return np.sum(((np_expected_c_counts - np_c_counts) ** 2) / np_expected_c_counts)
 
 def chi2_critical(alpha: float, num_classes: int, num_attr_vals: int) -> float:
