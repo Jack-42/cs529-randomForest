@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 
+from scipy import stats as scistats
+
 def get_proportions(s: pd.Series) -> pd.Series:
     v_counts = s.value_counts()
     s_len = len(s)
@@ -64,9 +66,16 @@ def chi2_statistic(df_parent: pd.DataFrame, df_child: pd.DataFrame, class_col: s
     np_expected_c_counts = (np_p_counts / np.sum(np_p_counts)) * np_c_counts
     return np.sum(((np_expected_c_counts - np_c_counts) ** 2) / np_expected_c_counts)
 
+def chi2_critical(alpha: float, num_classes: int, num_attr_vals: int) -> float:
+    q = 1.0 - alpha
+    dof = (num_classes - 1) * (num_attr_vals - 1)
+    return scistats.chi2.ppf(q, dof)
+
 if __name__ == "__main__":
     pth = "../data/agaricus-lepiota-training.csv"
     df1 = pd.read_csv(pth)
     metric = entropy
     df1 = df1.drop(columns="id")
-    print(get_best_attribute(df1, metric))
+    print("Best attr test: ", get_best_attribute(df1, metric))
+    print("chi crit at alpha = 0.1: ", chi2_critical(0.1, 10, 15))
+    print("chi crit at alpha = 0.01: ", chi2_critical(0.01, 10, 15), " should be higher")
