@@ -74,18 +74,20 @@ class DecisionTree:
         return cur_node
 
     def classify(self, df: pd.DataFrame, cur_node: TreeNode,
-                 id_col: str = "id", class_col: str = "class",
-                 out=None) -> pd.DataFrame:
+                 id_col: str = "id", class_col: str = "class", 
+                 missing_attr_val: str = "?", out=None) -> pd.DataFrame:
         # Keep id column when calling
         if out is None:
-            out = df[[id_col, class_col]].copy(deep=True)
+            out = df[[id_col]].copy(deep=True)
             out = out.set_index(id_col)
+            out[class_col] = ""
         if cur_node.isLeaf():
             out.loc[df[id_col]] = cur_node.target
             return out
         attr = cur_node.attribute
-        for val in set(df[attr]):
-            df_val = df[df[attr] == val]
+        splitsWithMissingAsMajority, splitsWithMissingAsBranch = get_splits(df, attr, missing_attr_val=missing_attr_val)
+        for val in splitsWithMissingAsMajority.keys():
+            df_val = splitsWithMissingAsMajority[val]
             if len(df_val) == 0:
                 # no examples to classify
                 continue
@@ -104,4 +106,5 @@ if __name__ == "__main__":
     dtree = DecisionTree(metric, 0.01)
     dtree.train(df_train, dtree.root)
     print("done train")
-    print(dtree.classify(df1, dtree.root).head())
+    classifications = dtree.classify(df1, dtree.root)
+    print(classifications.head())
