@@ -1,7 +1,7 @@
 import pandas as pd
 
 from TreeNode import TreeNode
-from utils import get_best_attribute, get_splits
+from utils import get_best_attribute
 from utils import get_chi2_statistic, get_chi2_critical
 
 """
@@ -13,25 +13,30 @@ Contains methods for training a decision tree using the ID3 algorithm.
 
 
 class DecisionTree:
-    def __init__(self, metric_fn, alpha: float):
+    def __init__(self, n_features: int, metric_fn, alpha: float):
         """
-        Create a decision tree. Will be initialized w/ empty root node
+        Create a decision tree for the RandomForest.
+        Will be initialized w/ empty root node
+        :param n_features: int, the number of features we allow the tree to
+            consider at each split
         :param metric_fn: function->float, metric used to calculate
             information gain
+        :param alpha: float, (1 - confidence level) for chi-squared critical
+            value. e.g., alpha=0.05 would be a confidence level of 95%
         """
         self.root = TreeNode()
+        self.n_features = n_features
         self.metric_fn = metric_fn
         self.alpha = alpha
 
     def train(self, df: pd.DataFrame, cur_node: TreeNode,
-              class_col: str = "class", missing_attr_val="?", lvl=0, max_lvls=1000):
+              class_col: str = "class", lvl=0, max_lvls=3):
         """
         Method used to train DecisionTree
         :param df: Dataframe, assumes all cols (excluding class_col) are valid
             attributes - make sure to exclude "id" cols
         :param cur_node: TreeNode, the current node in our tree
         :param class_col: str, the column containing target attribute vals
-        :param missing_attr_val: str, the attribute value representing missing data
         :param lvl: (TEMPORARY) int, level of tree
         :param max_lvls: (TEMPORARY) int, max level of tree
         :return: TreeNode
@@ -48,27 +53,29 @@ class DecisionTree:
             cur_node.target = df[class_col].mode().loc[0]
             return cur_node
 
-        a = get_best_attribute(df, metric_fn=self.metric_fn, missing_attr_val=missing_attr_val)
+        a = get_best_attribute(df, metric_fn=self.metric_fn,
+                               n_features=self.n_features)
         a_vals = set(df[a])
-        if missing_attr_val in a_vals:
-            a_vals.remove(missing_attr_val)
-        splitsWithMissingAsMajority, splitsWithMissingAsBranch = get_splits(df, a, missing_attr_val=missing_attr_val)
-        chi2 = get_chi2_statistic(df, pd.Series(splitsWithMissingAsBranch.values()), missing_attr_val=missing_attr_val)
+        splits = {}
+        for vi in a_vals:
+            examples_vi = df[df[a] == vi].drop(columns=[a])
+            splits[vi] = examples_vi
+        chi2 = get_chi2_statistic(df, pd.Series(splits.values()))
         chi2_critical = get_chi2_critical(self.alpha, n_classes,
                                           len(a_vals))
         if chi2 < chi2_critical:
             # split doesn't provide enough useful info
-            cur_node.target = (df[df[a] != missing_attr_val])[class_col].mode().loc[0]
+            cur_node.target = df[class_col].mode().loc[0]
             return cur_node
 
         cur_node.attribute = a
         for vi in a_vals:
             nxt_node = TreeNode()
             cur_node.addBranch(vi, nxt_node)
-            examples_vi = splitsWithMissingAsMajority[vi]
+            examples_vi = splits[vi]
             if len(examples_vi) == 0:
                 # examples is empty
-                nxt_node.target = (df[df[a] != missing_attr_val])[class_col].mode().loc[0]
+                nxt_node.target = df[class_col].mode().loc[0]
             else:
                 self.train(examples_vi, nxt_node, lvl=lvl + 1)
         return cur_node
@@ -101,7 +108,11 @@ if __name__ == "__main__":
     df1 = pd.read_csv(pth)
     df_train = df1.drop(columns="id")  # this is important!
     metric = entropy
-    dtree = DecisionTree(metric, 0.01)
-    dtree.train(df_train, dtree.root)
+    total_features = len(df_train.columns) - 1  # - 1 for class col
+    print(total_features)
+    n_feats = total_features // 3
+    print(n_feats)
+    dtree = DecisionTree(n_features=n_feats, metric_fn=metric, alpha=0.05)
+    dtree.train(df_train, dtree.root, max_lvls=1000)
     print("done train")
     print(dtree.classify(df1, dtree.root).head())
