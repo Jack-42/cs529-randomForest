@@ -50,23 +50,25 @@ class DecisionTree:
 
         a = get_best_attribute(df, metric_fn=self.metric_fn, missing_attr_val=missing_attr_val)
         a_vals = set(df[a])
-        splits = get_splits(df, a, missing_attr_val=missing_attr_val)
-        chi2 = get_chi2_statistic(df, pd.Series(splits.values()))
+        if missing_attr_val in a_vals:
+            a_vals.remove(missing_attr_val)
+        splitsWithMissingAsMajority, splitsWithMissingAsBranch = get_splits(df, a, missing_attr_val=missing_attr_val)
+        chi2 = get_chi2_statistic(df, pd.Series(splitsWithMissingAsBranch.values()), missing_attr_val=missing_attr_val)
         chi2_critical = get_chi2_critical(self.alpha, n_classes,
                                           len(a_vals))
         if chi2 < chi2_critical:
             # split doesn't provide enough useful info
-            cur_node.target = df[class_col].mode().loc[0]
+            cur_node.target = (df[df[a] != missing_attr_val])[class_col].mode().loc[0]
             return cur_node
 
         cur_node.attribute = a
         for vi in a_vals:
             nxt_node = TreeNode()
             cur_node.addBranch(vi, nxt_node)
-            examples_vi = splits[vi]
+            examples_vi = splitsWithMissingAsMajority[vi]
             if len(examples_vi) == 0:
                 # examples is empty
-                nxt_node.target = df[class_col].mode().loc[0]
+                nxt_node.target = (df[df[a] != missing_attr_val])[class_col].mode().loc[0]
             else:
                 self.train(examples_vi, nxt_node, lvl=lvl + 1)
         return cur_node

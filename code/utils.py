@@ -57,36 +57,42 @@ def get_best_attribute(df: pd.DataFrame, metric_fn,
     best_atr = attrs[max_idx]
     return best_atr
 
-def get_splits(df: pd.DataFrame, attribute: str, missing_attr_val: str = "?") -> dict:
-    splits = {}
+def get_splits(df: pd.DataFrame, attribute: str, missing_attr_val: str = "?"):
+    splitsWithMissingAsMajority = {}
+    splitsWithMissingAsBranch = {}
 
     dfWithoutMissing = df[df[attribute] != missing_attr_val]
     dfMissing = df[df[attribute] == missing_attr_val]
 
-    most_common = dfWithoutMissing[attribute].mode()
+    most_common = dfWithoutMissing[attribute].mode().loc[0]
 
     if len(dfMissing) > 0:
         dfMostCommon = pd.concat([dfWithoutMissing[dfWithoutMissing[attribute] == most_common], dfMissing], ignore_index=True, sort=False)
     else:
         dfMostCommon = dfWithoutMissing[dfWithoutMissing[attribute] == most_common]
 
-    splits[most_common] = dfMostCommon.drop(columns=[attribute])
+    splitsWithMissingAsMajority[most_common] = dfMostCommon.drop(columns=[attribute])
 
-    a_vals = set(dfWithoutMissing[attribute])
+    a_vals = set(df[attribute])
     for v in a_vals:
         if v == most_common or v == missing_attr_val:
+            splitsWithMissingAsBranch[v] = df[df[attribute] == v].drop(columns=[attribute])
             continue
-        splits[v] = dfWithoutMissing[dfWithoutMissing[attribute] == v].drop(columns=[attribute])
+        
+        splitsWithMissingAsBranch[v] = df[df[attribute] == v].drop(columns=[attribute])
+        splitsWithMissingAsMajority[v] = dfWithoutMissing[dfWithoutMissing[attribute] == v].drop(columns=[attribute])
 
-    return splits
+    return splitsWithMissingAsMajority, splitsWithMissingAsBranch
 
 def chi2_statistic_child(df_parent: pd.DataFrame, df_child: pd.DataFrame,
-                         class_col: str = "class"):
+                         class_col: str = "class", missing_attr_val: str = "?"):
     parent_vals = set(df_parent[class_col])
     parent_counts = []
     child_counts = []
     # manually computing to handle case where child is missing class
     for val in parent_vals:
+        if val == missing_attr_val:
+            continue
         parent_counts.append(float(len(df_parent[df_parent[class_col] == val])))
         child_counts.append(float(len(df_child[df_child[class_col] == val])))
     np_p_counts = np.array(parent_counts)
@@ -98,8 +104,8 @@ def chi2_statistic_child(df_parent: pd.DataFrame, df_child: pd.DataFrame,
 
 
 def get_chi2_statistic(df: pd.DataFrame, splits: pd.Series,
-                       class_col: str = "class"):
-    chi2_vals = splits.map(lambda s: chi2_statistic_child(df, s, class_col))
+                       class_col: str = "class", missing_attr_val: str = "?"):
+    chi2_vals = splits.map(lambda s: chi2_statistic_child(df, s, class_col, missing_attr_val=missing_attr_val))
     chi2 = np.sum(chi2_vals)
     return chi2
 
