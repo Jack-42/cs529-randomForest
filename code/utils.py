@@ -25,37 +25,80 @@ def misclassification_error(s: pd.Series) -> float:
 
 
 def information_gain(df: pd.DataFrame, attribute: str, metric_fn,
-                     class_col: str = "class") -> float:
+                     class_col: str = "class",
+                     missing_attr_val: str = "?") -> float:
     def helper(s, s_v):
         return (len(s_v) / len(s)) * metric_fn(s_v[class_col])
 
-    s_impurity = metric_fn(df[class_col])
-    vals_a = set(df[attribute])
-    gain_sum = 0
+    # ignore rows with ?'s in column
+    dfWithoutMissing = df[df[attribute] != missing_attr_val]
+
+    s_impurity = metric_fn(dfWithoutMissing[class_col])
+    vals_a = set(dfWithoutMissing[attribute])
+    gain_sum = 0.0
     for v in vals_a:
-        sv = df[df[attribute] == v]
+        sv = dfWithoutMissing[dfWithoutMissing[attribute] == v]
         gain_sum += helper(df, sv)
     return s_impurity - gain_sum
 
 
 def get_best_attribute(df: pd.DataFrame, metric_fn,
-                       class_col: str = "class", n_features: int = None) -> str:
+                       class_col: str = "class",
+                       missing_attr_val: str = "?") -> str:
     """
     Given a df, return the attribute which gave the highest information gain
     :param df: pandas Dataframe, attributes are columns
     :param metric_fn: function that returns a float
     :param class_col: str, the column where the class label is
-    :param n_features: (optional) int, use a random subset of this size
-        instead of all features available. If None all features used
+    :param missing_attr_val: str, the attribute value representing missing data
     :return: str, the column which gave the highest info gain
     """
     attrs = df.columns.drop([class_col])
-    if n_features is not None:
-        attrs = attrs.to_series().sample(n=n_features)
-    info_gains = attrs.map(lambda a: information_gain(df, a, metric_fn))
+    info_gains = attrs.map(lambda a: information_gain(df, a, metric_fn,
+                                                      missing_attr_val=missing_attr_val))
     max_idx = np.argmax(info_gains)
     best_atr = attrs[max_idx]
     return best_atr
+
+
+def get_subsample(df: pd.DataFrame, ratio: float, random_state: int = None):
+    """
+    Get subsample from dataset
+    :param df: pd.Dataframe, dataset being sampled
+    :param ratio: float, fraction of data to use in sample
+    :param random_state: (optional) int, random seed for reproducibility
+    :return: pd.Dataframe, the subsample
+    """
+    return df.sample(frac=ratio, replace=True, random_state=random_state)
+
+
+def get_splits(df: pd.DataFrame, attribute: str,
+               missing_attr_val: str = "?") -> dict:
+    splits = {}
+
+    dfWithoutMissing = df[df[attribute] != missing_attr_val]
+    dfMissing = df[df[attribute] == missing_attr_val]
+
+    most_common = dfWithoutMissing[attribute].mode()
+
+    if len(dfMissing) > 0:
+        dfMostCommon = pd.concat(
+            [dfWithoutMissing[dfWithoutMissing[attribute] == most_common],
+             dfMissing], ignore_index=True, sort=False)
+    else:
+        dfMostCommon = dfWithoutMissing[
+            dfWithoutMissing[attribute] == most_common]
+
+    splits[most_common] = dfMostCommon.drop(columns=[attribute])
+
+    a_vals = set(dfWithoutMissing[attribute])
+    for v in a_vals:
+        if v == most_common or v == missing_attr_val:
+            continue
+        splits[v] = dfWithoutMissing[dfWithoutMissing[attribute] == v].drop(
+            columns=[attribute])
+
+    return splits
 
 
 def chi2_statistic_child(df_parent: pd.DataFrame, df_child: pd.DataFrame,
@@ -89,18 +132,14 @@ def get_chi2_critical(alpha: float, num_classes: int,
     return scistats.chi2.ppf(q, dof)
 
 
-def get_subsample(df: pd.DataFrame, ratio: float, random_state: int = None):
-    """
-    Get subsample from dataset
-    :param df: pd.Dataframe, dataset being sampled
-    :param ratio: float, fraction of data to use in sample
-    :param random_state: (optional) int, random seed for reproducibility
-    :return: pd.Dataframe, the subsample
-    """
-    return df.sample(frac=ratio, replace=True, random_state=random_state)
-
-
 if __name__ == "__main__":
+    pth = "../data/agaricus-lepiota-training.csv"
+    df1 = pd.read_csv(pth)
+    metric = entropy
+    df1 = df1.drop(columns="id")
+    print("Best attr test: ", get_best_attribute(df1, metric))
+    print("chi crit at alpha = 0.1: ", get_chi2_critical(0.1, 10, 15))
+    print("chi crit at alpha = 0.01: ", get_chi2_critical(0.01, 10, 15))
     df_parent = pd.read_csv(
         "C:\\Users\\Jack\\Documents\\School\\Spring 2023\\CS529\\cs529-randomForest\\data\\test.csv")
     df_strong = pd.read_csv(
@@ -110,10 +149,3 @@ if __name__ == "__main__":
     x = get_chi2_statistic(df_parent, pd.Series([df_weak, df_strong]))
     print("chi crit at alpha = 0.05: ", get_chi2_critical(0.05, 2, 2))
     print(x)
-    print(df_weak)
-    print(get_subsample(df_weak, 1.0, random_state=1))
-    pth = "../data/agaricus-lepiota-training.csv"
-    df1 = pd.read_csv(pth)
-    df_train = df1.drop(columns="id")  # this is important!
-    print(get_best_attribute(df_train, entropy))
-    print(get_best_attribute(df_train, entropy, n_features=5))
