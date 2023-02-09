@@ -44,16 +44,21 @@ def information_gain(df: pd.DataFrame, attribute: str, metric_fn,
 
 def get_best_attribute(df: pd.DataFrame, metric_fn,
                        class_col: str = "class",
-                       missing_attr_val: str = "?") -> str:
+                       missing_attr_val: str = "?",
+                       n_features: int = None) -> str:
     """
     Given a df, return the attribute which gave the highest information gain
     :param df: pandas Dataframe, attributes are columns
     :param metric_fn: function that returns a float
     :param class_col: str, the column where the class label is
     :param missing_attr_val: str, the attribute value representing missing data
+    :param n_features: (optional) int, use only subsample of features of this
+        size
     :return: str, the column which gave the highest info gain
     """
     attrs = df.columns.drop([class_col])
+    if n_features is not None:
+        attrs = attrs.to_series().sample(n=n_features)
     info_gains = attrs.map(lambda a: information_gain(df, a, metric_fn,
                                                       missing_attr_val=missing_attr_val))
     max_idx = np.argmax(info_gains)
@@ -79,7 +84,7 @@ def get_splits(df: pd.DataFrame, attribute: str,
     dfWithoutMissing = df[df[attribute] != missing_attr_val]
     dfMissing = df[df[attribute] == missing_attr_val]
 
-    most_common = dfWithoutMissing[attribute].mode()
+    most_common = dfWithoutMissing[attribute].mode().iloc[0]
 
     if len(dfMissing) > 0:
         dfMostCommon = pd.concat(
@@ -149,3 +154,7 @@ if __name__ == "__main__":
     x = get_chi2_statistic(df_parent, pd.Series([df_weak, df_strong]))
     print("chi crit at alpha = 0.05: ", get_chi2_critical(0.05, 2, 2))
     print(x)
+    abs_best = get_best_attribute(df1, metric)
+    small_best = get_best_attribute(df1, metric, n_features=5)
+    print(abs_best)
+    print(small_best)
