@@ -125,7 +125,7 @@ def get_subsample(df: pd.DataFrame, ratio: float, random_state: int = None):
     :param random_state: (optional) int, random seed for reproducibility
     :return: pd.Dataframe, the subsample
     """
-    return df.sample(frac=ratio, random_state=random_state)
+    return df.sample(frac=ratio, replace=True, random_state=random_state)
 
 
 if __name__ == "__main__":
@@ -139,4 +139,4 @@ if __name__ == "__main__":
     print("chi crit at alpha = 0.05: ", get_chi2_critical(0.05, 2, 2))
     print(x)
     print(df_weak)
-    print(get_subsample(df_weak, 0.5, random_state=1))
+    print(get_subsample(df_weak, 1.0, random_state=1))
