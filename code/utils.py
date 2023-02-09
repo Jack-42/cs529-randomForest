@@ -110,20 +110,25 @@ def get_chi2_statistic(df: pd.DataFrame, splits: pd.Series,
     return chi2
 
 
-def get_chi2_critical(alpha: float, num_classes: int, num_attr_vals: int) -> float:
+def get_chi2_critical(alpha: float, num_classes: int,
+                      num_attr_vals: int) -> float:
     q = 1.0 - alpha
     dof = (num_classes - 1) * (num_attr_vals - 1)
     return scistats.chi2.ppf(q, dof)
 
 
+def get_subsample(df: pd.DataFrame, ratio: float, random_state: int = None):
+    """
+    Get subsample from dataset
+    :param df: pd.Dataframe, dataset being sampled
+    :param ratio: float, fraction of data to use in sample
+    :param random_state: (optional) int, random seed for reproducibility
+    :return: pd.Dataframe, the subsample
+    """
+    return df.sample(frac=ratio, random_state=random_state)
+
+
 if __name__ == "__main__":
-    pth = "../data/agaricus-lepiota-training.csv"
-    df1 = pd.read_csv(pth)
-    metric = entropy
-    df1 = df1.drop(columns="id")
-    print("Best attr test: ", get_best_attribute(df1, metric))
-    print("chi crit at alpha = 0.1: ", get_chi2_critical(0.1, 10, 15))
-    print("chi crit at alpha = 0.01: ", get_chi2_critical(0.01, 10, 15))
     df_parent = pd.read_csv(
         "C:\\Users\\Jack\\Documents\\School\\Spring 2023\\CS529\\cs529-randomForest\\data\\test.csv")
     df_strong = pd.read_csv(
@@ -133,3 +138,5 @@ if __name__ == "__main__":
     x = get_chi2_statistic(df_parent, pd.Series([df_weak, df_strong]))
     print("chi crit at alpha = 0.05: ", get_chi2_critical(0.05, 2, 2))
     print(x)
+    print(df_weak)
+    print(get_subsample(df_weak, 0.5, random_state=1))
