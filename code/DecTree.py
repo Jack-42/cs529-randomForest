@@ -88,7 +88,8 @@ class DecisionTree:
                  out=None) -> pd.DataFrame:
         # Keep id column when calling
         if out is None:
-            out = df[[id_col, class_col]].copy(deep=True)
+            out = df[[id_col]].copy(deep=True)
+            out[class_col] = ""
             out = out.set_index(id_col)
         if cur_node.isLeaf():
             out.loc[df[id_col]] = cur_node.target
