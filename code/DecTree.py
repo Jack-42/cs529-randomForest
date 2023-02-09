@@ -1,7 +1,7 @@
 import pandas as pd
 
 from TreeNode import TreeNode
-from utils import get_best_attribute
+from utils import get_best_attribute, get_splits
 from utils import get_chi2_statistic, get_chi2_critical
 
 """
@@ -24,13 +24,14 @@ class DecisionTree:
         self.alpha = alpha
 
     def train(self, df: pd.DataFrame, cur_node: TreeNode,
-              class_col: str = "class", lvl=0, max_lvls=3):
+              class_col: str = "class", missing_attr_val="?", lvl=0, max_lvls=1000):
         """
         Method used to train DecisionTree
         :param df: Dataframe, assumes all cols (excluding class_col) are valid
             attributes - make sure to exclude "id" cols
         :param cur_node: TreeNode, the current node in our tree
         :param class_col: str, the column containing target attribute vals
+        :param missing_attr_val: str, the attribute value representing missing data
         :param lvl: (TEMPORARY) int, level of tree
         :param max_lvls: (TEMPORARY) int, max level of tree
         :return: TreeNode
@@ -47,12 +48,9 @@ class DecisionTree:
             cur_node.target = df[class_col].mode().loc[0]
             return cur_node
 
-        a = get_best_attribute(df, metric_fn=self.metric_fn)
+        a = get_best_attribute(df, metric_fn=self.metric_fn, missing_attr_val=missing_attr_val)
         a_vals = set(df[a])
-        splits = {}
-        for vi in a_vals:
-            examples_vi = df[df[a] == vi].drop(columns=[a])
-            splits[vi] = examples_vi
+        splits = get_splits(df, a, missing_attr_val=missing_attr_val)
         chi2 = get_chi2_statistic(df, pd.Series(splits.values()))
         chi2_critical = get_chi2_critical(self.alpha, n_classes,
                                           len(a_vals))

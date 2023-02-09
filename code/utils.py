@@ -25,34 +25,60 @@ def misclassification_error(s: pd.Series) -> float:
 
 
 def information_gain(df: pd.DataFrame, attribute: str, metric_fn,
-                     class_col: str = "class") -> float:
+                     class_col: str = "class", missing_attr_val: str = "?") -> float:
     def helper(s, s_v):
         return (len(s_v) / len(s)) * metric_fn(s_v[class_col])
+    
+    # ignore rows with ?'s in column
+    dfWithoutMissing = df[df[attribute] != missing_attr_val]
 
-    s_impurity = metric_fn(df[class_col])
-    vals_a = set(df[attribute])
-    gain_sum = 0
+    s_impurity = metric_fn(dfWithoutMissing[class_col])
+    vals_a = set(dfWithoutMissing[attribute])
+    gain_sum = 0.0
     for v in vals_a:
-        sv = df[df[attribute] == v]
+        sv = dfWithoutMissing[dfWithoutMissing[attribute] == v]
         gain_sum += helper(df, sv)
     return s_impurity - gain_sum
 
 
 def get_best_attribute(df: pd.DataFrame, metric_fn,
-                       class_col: str = "class") -> str:
+                       class_col: str = "class", missing_attr_val: str = "?") -> str:
     """
     Given a df, return the attribute which gave the highest information gain
     :param df: pandas Dataframe, attributes are columns
     :param metric_fn: function that returns a float
     :param class_col: str, the column where the class label is
+    :param missing_attr_val: str, the attribute value representing missing data
     :return: str, the column which gave the highest info gain
     """
     attrs = df.columns.drop([class_col])
-    info_gains = attrs.map(lambda a: information_gain(df, a, metric_fn))
+    info_gains = attrs.map(lambda a: information_gain(df, a, metric_fn, missing_attr_val=missing_attr_val))
     max_idx = np.argmax(info_gains)
     best_atr = attrs[max_idx]
     return best_atr
 
+def get_splits(df: pd.DataFrame, attribute: str, missing_attr_val: str = "?") -> dict:
+    splits = {}
+
+    dfWithoutMissing = df[df[attribute] != missing_attr_val]
+    dfMissing = df[df[attribute] == missing_attr_val]
+
+    most_common = dfWithoutMissing[attribute].mode()
+
+    if len(dfMissing) > 0:
+        dfMostCommon = pd.concat([dfWithoutMissing[dfWithoutMissing[attribute] == most_common], dfMissing], ignore_index=True, sort=False)
+    else:
+        dfMostCommon = dfWithoutMissing[dfWithoutMissing[attribute] == most_common]
+
+    splits[most_common] = dfMostCommon.drop(columns=[attribute])
+
+    a_vals = set(dfWithoutMissing[attribute])
+    for v in a_vals:
+        if v == most_common or v == missing_attr_val:
+            continue
+        splits[v] = dfWithoutMissing[dfWithoutMissing[attribute] == v].drop(columns=[attribute])
+
+    return splits
 
 def chi2_statistic_child(df_parent: pd.DataFrame, df_child: pd.DataFrame,
                          class_col: str = "class"):
