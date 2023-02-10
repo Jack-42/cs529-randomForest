@@ -13,17 +13,19 @@ Contains methods for training a decision tree using the ID3 algorithm.
 
 
 class DecisionTree:
-    def __init__(self, n_features: int, metric_fn, alpha: float):
+    def __init__(self, feature_r: float, metric_fn, alpha: float):
         """
         Create a decision tree. Will be initialized w/ empty root node
-        :param n_features: int, size of feature subsample to consider at each
-            split
+        :param feature_r: float, use only a subset of features of
+            size total_feats * feature_ratio (min 1 feature used) at each split
         :param metric_fn: function->float, metric used to calculate
             information gain
         :param alpha: float, (1-confidence level) for chi-square critical value
         """
+        if feature_r > 1.0 or feature_r <= 0:
+            raise ValueError("feature_r must be in range (0, 1]")
         self.root = TreeNode()
-        self.n_features = n_features
+        self.feature_r = feature_r
         self.metric_fn = metric_fn
         self.alpha = alpha
 
@@ -55,7 +57,7 @@ class DecisionTree:
 
         a = get_best_attribute(df, metric_fn=self.metric_fn,
                                missing_attr_val=missing_val,
-                               n_features=self.n_features)
+                               feature_ratio=self.feature_r)
         a_vals = set(df[a])
         if missing_val in a_vals:
             a_vals.remove(missing_val)
@@ -114,11 +116,8 @@ if __name__ == "__main__":
     df1 = pd.read_csv(pth)
     df_train = df1.drop(columns="id")  # this is important!
     metric = entropy
-    total_features = len(df_train.columns) - 1  # account for class col
-    n_feats = total_features // 3
-    print(total_features)
-    print(n_feats)
-    dtree = DecisionTree(n_feats, metric, 0.01)
+    feat_r = 0.01
+    dtree = DecisionTree(feat_r, metric, 0.01)
     dtree.train(df_train, dtree.root)
     print("done train")
     classifications = dtree.classify(df1, dtree.root)
