@@ -65,6 +65,11 @@ def get_best_attribute(df: pd.DataFrame, metric_fn,
                                                       missing_attr_val=missing_attr_val))
     max_idx = np.argmax(info_gains)
     best_atr = attrs[max_idx]
+    if only_missing(df, best_atr, missing_attr_val) and len(attrs) != 1:
+        # selected attribute has only meaningless values, choose another
+        info_gains[max_idx] = 0.0
+        new_max_idx = np.argmax(info_gains)
+        best_atr = attrs[new_max_idx]
     return best_atr
 
 
