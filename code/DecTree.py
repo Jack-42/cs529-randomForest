@@ -3,7 +3,7 @@ import numpy as np
 
 from TreeNode import TreeNode
 from utils import get_best_attribute, get_splits
-from utils import get_chi2_statistic, get_chi2_critical
+from utils import get_chi2_statistic, get_chi2_critical, only_missing
 
 """
 @author: Jack Ringer, Mike Adams
@@ -53,21 +53,15 @@ class DecisionTree:
             return cur_node
         attrs = df.columns.drop([class_col])
 
-        def onlyMissing(df_h, attr_h):
-            out_h = True
-            for val_h in df_h[attr_h]:
-                if val_h != missing_val:
-                    return False
-            return out_h
-
-        if len(attrs) == 0 or (len(attrs) == 1 and onlyMissing(df, list(attrs)[0])) or lvl >= max_lvls:
+        all_missing = len(attrs) == 1 and only_missing(df, list(attrs)[0], missing_val)
+        if len(attrs) == 0 or all_missing or lvl >= max_lvls:
             # attributes empty, label = most common class label left
             cur_node.target = df[class_col].mode().iloc[0]
             return cur_node
 
-        if random_state == None:
+        if random_state is None:
             gen = np.random.default_rng(random_state)
-            random_state = gen.integers(1, (2 ** 32) - 2, endpoint=True)
+            random_state = gen.integers(0, (2 ** 32) - 1, endpoint=True)
 
         a = get_best_attribute(df, metric_fn=self.metric_fn,
                                missing_attr_val=missing_val,
@@ -99,7 +93,8 @@ class DecisionTree:
                 random_state_new += 1
                 if random_state_new == (2 ** 32) - 1:
                     random_state_new = 1
-                self.train(examples_vi, nxt_node, lvl=lvl + 1, class_col=class_col, missing_val=missing_val, random_state=random_state_new, max_lvls=max_lvls)
+                self.train(examples_vi, nxt_node, lvl=lvl + 1, class_col=class_col, missing_val=missing_val,
+                           random_state=random_state_new, max_lvls=max_lvls)
         return cur_node
 
     def classify(self, df: pd.DataFrame, cur_node: TreeNode,
@@ -116,7 +111,7 @@ class DecisionTree:
         attr = cur_node.attribute
         splits_miss_maj, splits_miss_branch = get_splits(df, attr,
                                                          missing_attr_val=missing_attr_val)
-        
+
         def sort_splits(splits):
             sorted_splits = []
             for val, split in sorted(splits.items(), key=lambda item: len(item[1]), reverse=True):

@@ -148,6 +148,14 @@ def get_chi2_critical(alpha: float, num_classes: int,
     return scistats.chi2.ppf(q, dof)
 
 
+def only_missing(df_h, attr_h, missing_val: str = "?"):
+    attr_vals = set(df_h[attr_h])
+    for val_h in attr_vals:
+        if val_h != missing_val:
+            return False
+    return True
+
+
 if __name__ == "__main__":
     pth = "../data/agaricus-lepiota-training.csv"
     df1 = pd.read_csv(pth)
