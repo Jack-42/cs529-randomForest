@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 class TreeNode:
 
     def __init__(self, target, attribute):
@@ -17,8 +19,14 @@ class TreeNode:
     def addBranch(self, value, node):
         self.branches[value] = node
 
+    def branchValues(self):
+        return deepcopy(list(self.branches.keys()))
+
     def next(self, value):
-        return self.branches[value]
+        if value in self.branches.keys():
+            return self.branches[value]
+        else:
+            return None
 
     def isLeaf(self):
         return self.attribute is None

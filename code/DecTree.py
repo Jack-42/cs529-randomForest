@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 from TreeNode import TreeNode
 from utils import get_best_attribute, get_splits
@@ -51,10 +52,22 @@ class DecisionTree:
             cur_node.target = label
             return cur_node
         attrs = df.columns.drop([class_col])
-        if len(attrs) == 0 or lvl >= max_lvls:
+
+        def onlyMissing(df_h, attr_h):
+            out_h = True
+            for val_h in df_h[attr_h]:
+                if val_h != missing_val:
+                    return False
+            return out_h
+
+        if len(attrs) == 0 or (len(attrs) == 1 and onlyMissing(df, list(attrs)[0])) or lvl >= max_lvls:
             # attributes empty, label = most common class label left
             cur_node.target = df[class_col].mode().iloc[0]
             return cur_node
+
+        if random_state == None:
+            gen = np.random.default_rng(random_state)
+            random_state = gen.integers(1, (2 ** 32) - 2, endpoint=True)
 
         a = get_best_attribute(df, metric_fn=self.metric_fn,
                                missing_attr_val=missing_val,
@@ -74,6 +87,7 @@ class DecisionTree:
             return cur_node
 
         cur_node.attribute = a
+        random_state_new = random_state
         for vi in a_vals:
             nxt_node = TreeNode()
             cur_node.addBranch(vi, nxt_node)
@@ -82,13 +96,15 @@ class DecisionTree:
                 # examples is empty
                 nxt_node.target = df[class_col].mode().loc[0]
             else:
-                self.train(examples_vi, nxt_node, lvl=lvl + 1)
+                random_state_new += 1
+                if random_state_new == (2 ** 32) - 1:
+                    random_state_new = 1
+                self.train(examples_vi, nxt_node, lvl=lvl + 1, class_col=class_col, missing_val=missing_val, random_state=random_state_new, max_lvls=max_lvls)
         return cur_node
 
     def classify(self, df: pd.DataFrame, cur_node: TreeNode,
                  id_col: str = "id", class_col: str = "class",
-                 missing_attr_val="?",
-                 out=None) -> pd.DataFrame:
+                 missing_attr_val="?", out=None) -> pd.DataFrame:
         # Keep id column when calling
         if out is None:
             out = df[[id_col]].copy(deep=True)
@@ -100,12 +116,31 @@ class DecisionTree:
         attr = cur_node.attribute
         splits_miss_maj, splits_miss_branch = get_splits(df, attr,
                                                          missing_attr_val=missing_attr_val)
+        
+        def sort_splits(splits):
+            sorted_splits = []
+            for val, split in sorted(splits.items(), key=lambda item: len(item[1]), reverse=True):
+                sorted_splits.append((val, split))
+            return sorted_splits
+
         for val in splits_miss_maj.keys():
             df_val = splits_miss_maj[val]
             if len(df_val) == 0:
                 # no examples to classify
                 continue
-            out = self.classify(df_val, cur_node.next(val), id_col=id_col,
+            nextNode = cur_node.next(val)
+            if nextNode == None:
+                # branch missing, find most common still in tree
+                sorted_splits = sort_splits(splits_miss_maj)
+                for v, s in sorted_splits:
+                    nextNode = cur_node.next(v)
+                    if nextNode != None:
+                        break
+                if nextNode == None:
+                    # pick first as last resort, so deterministic
+                    availVals = cur_node.branchValues()
+                    nextNode = cur_node.next(availVals[0])
+            out = self.classify(df_val, nextNode, id_col=id_col,
                                 class_col=class_col, out=out)
         return out
 
