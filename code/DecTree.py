@@ -30,7 +30,7 @@ class DecisionTree:
         self.alpha = alpha
 
     def train(self, df: pd.DataFrame, cur_node: TreeNode,
-              class_col: str = "class", missing_val="?", lvl=0,
+              class_col: str = "class", missing_val="?", random_state: int = None, lvl=0,
               max_lvls=1000):
         """
         Method used to train DecisionTree
@@ -39,6 +39,7 @@ class DecisionTree:
         :param cur_node: TreeNode, the current node in our tree
         :param class_col: str, the column containing target attribute vals
         :param missing_val: str, the attribute value representing missing data
+        :param random_state: int, seed for feature bagging
         :param lvl: (TEMPORARY) int, level of tree
         :param max_lvls: (TEMPORARY) int, max level of tree
         :return: TreeNode
@@ -57,7 +58,7 @@ class DecisionTree:
 
         a = get_best_attribute(df, metric_fn=self.metric_fn,
                                missing_attr_val=missing_val,
-                               feature_ratio=self.feature_r)
+                               feature_ratio=self.feature_r, random_state=random_state)
         a_vals = set(df[a])
         if missing_val in a_vals:
             a_vals.remove(missing_val)

@@ -45,7 +45,7 @@ def information_gain(df: pd.DataFrame, attribute: str, metric_fn,
 def get_best_attribute(df: pd.DataFrame, metric_fn,
                        class_col: str = "class",
                        missing_attr_val: str = "?",
-                       feature_ratio: float = None) -> str:
+                       feature_ratio: float = None, random_state: int = None) -> str:
     """
     Given a df, return the attribute which gave the highest information gain
     :param df: pandas Dataframe, attributes are columns
@@ -54,12 +54,13 @@ def get_best_attribute(df: pd.DataFrame, metric_fn,
     :param missing_attr_val: str, the attribute value representing missing data
     :param feature_ratio: (optional) float, use only a subset of features of
         size total_feats * feature_ratio (min 1 feature used)
+    :param random_state: (optional) int, random seed for reproducibility
     :return: str, the column which gave the highest info gain
     """
     attrs = df.columns.drop([class_col])
     if feature_ratio is not None:
         n_feats = max(1, int(len(attrs) * feature_ratio))
-        attrs = attrs.to_series().sample(n=n_feats)
+        attrs = attrs.to_series().sample(n=n_feats, random_state=random_state)
     info_gains = attrs.map(lambda a: information_gain(df, a, metric_fn,
                                                       missing_attr_val=missing_attr_val))
     max_idx = np.argmax(info_gains)
