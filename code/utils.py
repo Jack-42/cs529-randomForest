@@ -176,6 +176,19 @@ def get_accuracy(predicted: pd.Series, actual: pd.Series) -> float:
     return n_correct / total
 
 
+def get_train_val_split(df: pd.DataFrame, val_r: float, seed: int):
+    """
+    Get split for training and validation
+    :param df: pd.Dataframe, entire dataset
+    :param val_r: float, ratio to use for validation split
+    :param seed: int, random seed
+    :return: 2-tuple of dataframes
+    """
+    val_split = df.sample(frac=val_r, replace=False, random_state=seed)
+    train_split = df.drop(val_split.index)
+    return train_split, val_split
+
+
 if __name__ == "__main__":
     df_parent = pd.read_csv(
         "C:\\Users\\Jack\\Documents\\School\\Spring 2023\\CS529\\cs529-randomForest\\data\\test.csv")
@@ -183,7 +196,7 @@ if __name__ == "__main__":
         "C:\\Users\\Jack\\Documents\\School\\Spring 2023\\CS529\\cs529-randomForest\\data\\test_child.csv")
     df_weak = pd.read_csv(
         "C:\\Users\\Jack\\Documents\\School\\Spring 2023\\CS529\\cs529-randomForest\\data\\test_child2.csv")
-    print(df_strong)
     print(df_weak)
-    val = get_accuracy(df_strong["class"], df_weak["class"].iloc[0:6])
+    train, val = get_train_val_split(df_weak, val_r=0.75, seed=42)
+    print(train)
     print(val)
