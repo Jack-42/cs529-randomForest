@@ -29,8 +29,10 @@ class RandomForest:
         self.bag_r: float = bag_r
         self.tree_count: int = tree_count
 
-        self.bag_seed_generator = np.random.default_rng(seed_for_bag_seed_generator)
-        self.feat_bag_seed_generator = np.random.default_rng(seed_for_feat_bag_seed_generator)
+        self.bag_seed_generator = np.random.default_rng(
+            seed_for_bag_seed_generator)
+        self.feat_bag_seed_generator = np.random.default_rng(
+            seed_for_feat_bag_seed_generator)
         int_type_info = np.iinfo(np.int32)
         self.min_int = 0
         self.max_int = int_type_info.max
@@ -43,20 +45,27 @@ class RandomForest:
             tree = DecisionTree(self.feature_r, self.metric_fn, self.alpha)
             self.trees.append(tree)
 
-    def train(self, df: pd.DataFrame, class_col: str = "class", missing_val: str = "?"):
+    def train(self, df: pd.DataFrame, class_col: str = "class",
+              missing_val: str = "?"):
         for i in range(self.tree_count):
             tree = self.trees[i]
-            seed1 = self.bag_seed_generator.integers(self.min_int, high=self.max_int,
+            seed1 = self.bag_seed_generator.integers(self.min_int,
+                                                     high=self.max_int,
                                                      endpoint=True)
-            seed2 = self.feat_bag_seed_generator.integers(self.min_int, high=self.max_int,
+            seed2 = self.feat_bag_seed_generator.integers(self.min_int,
+                                                          high=self.max_int,
                                                           endpoint=True)
             bag = get_subsample(df, self.bag_r, random_state=seed1)
-            tree.train(bag, tree.root, class_col=class_col, missing_val=missing_val, random_state=seed2)
+            tree.train(bag, tree.root, class_col=class_col,
+                       missing_val=missing_val, random_state=seed2)
 
-    def classify(self, df: pd.DataFrame, id_col: str = "id", class_col: str = "class", missing_attr_val="?"):
+    def classify(self, df: pd.DataFrame, id_col: str = "id",
+                 class_col: str = "class", missing_attr_val="?"):
         preds = []
         for tree in self.trees:
-            preds.append(tree.classify(df, tree.root, id_col=id_col, class_col=class_col, missing_attr_val=missing_attr_val))
+            preds.append(
+                tree.classify(df, tree.root, id_col=id_col, class_col=class_col,
+                              missing_attr_val=missing_attr_val))
         ids = set(df[id_col])
         out = df[[id_col]].copy(deep=True)
         out[class_col] = ""
@@ -84,6 +93,7 @@ class RandomForest:
 
         return out
 
+
 if __name__ == "__main__":
     from utils import entropy
 
@@ -95,9 +105,11 @@ if __name__ == "__main__":
     alpha = 0.01
     bag_r = 0.4
     tree_count = 10
-    seed_for_bag_seed_generator = None # random
-    seed_for_feat_bag_seed_generator = None # random
-    rf = RandomForest(feat_r, metric, alpha, bag_r, tree_count, seed_for_bag_seed_generator, seed_for_feat_bag_seed_generator)
+    seed_for_bag_seed_generator = None  # random
+    seed_for_feat_bag_seed_generator = None  # random
+    rf = RandomForest(feat_r, metric, alpha, bag_r, tree_count,
+                      seed_for_bag_seed_generator,
+                      seed_for_feat_bag_seed_generator)
     rf.train(df_train)
     classifications = rf.classify(df1)
     print(classifications.head())

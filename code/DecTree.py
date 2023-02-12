@@ -31,7 +31,8 @@ class DecisionTree:
         self.alpha = alpha
 
     def train(self, df: pd.DataFrame, cur_node: TreeNode,
-              class_col: str = "class", missing_val="?", random_state: int = None, lvl=0,
+              class_col: str = "class", missing_val="?",
+              random_state: int = None, lvl=0,
               max_lvls=1000):
         """
         Method used to train DecisionTree
@@ -53,7 +54,8 @@ class DecisionTree:
             return cur_node
         attrs = df.columns.drop([class_col])
 
-        all_missing = len(attrs) == 1 and only_missing(df, list(attrs)[0], missing_val)
+        all_missing = len(attrs) == 1 and only_missing(df, list(attrs)[0],
+                                                       missing_val)
         if len(attrs) == 0 or all_missing or lvl >= max_lvls:
             # attributes empty, label = most common class label left
             cur_node.target = df[class_col].mode().iloc[0]
@@ -65,7 +67,8 @@ class DecisionTree:
 
         a = get_best_attribute(df, metric_fn=self.metric_fn,
                                missing_attr_val=missing_val,
-                               feature_ratio=self.feature_r, random_state=random_state)
+                               feature_ratio=self.feature_r,
+                               random_state=random_state)
         a_vals = set(df[a])
         if missing_val in a_vals:
             a_vals.remove(missing_val)
@@ -106,7 +109,8 @@ class DecisionTree:
                 random_state_new += 1
                 if random_state_new == (2 ** 32) - 1:
                     random_state_new = 1
-                self.train(examples_vi, nxt_node, lvl=lvl + 1, class_col=class_col, missing_val=missing_val,
+                self.train(examples_vi, nxt_node, lvl=lvl + 1,
+                           class_col=class_col, missing_val=missing_val,
                            random_state=random_state_new, max_lvls=max_lvls)
         return cur_node
 
@@ -130,11 +134,11 @@ class DecisionTree:
             if len(df_val) == 0:
                 # no examples to classify
                 continue
-            nextNode = cur_node.next(val)
-            if nextNode == None:
+            next_node = cur_node.next(val)
+            if next_node is None:
                 # branch missing, find default
-                nextNode = cur_node.next("default")
-            out = self.classify(df_val, nextNode, id_col=id_col,
+                next_node = cur_node.next("default")
+            out = self.classify(df_val, next_node, id_col=id_col,
                                 class_col=class_col, out=out)
         return out
 

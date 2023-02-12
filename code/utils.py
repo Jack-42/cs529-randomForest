@@ -45,7 +45,8 @@ def information_gain(df: pd.DataFrame, attribute: str, metric_fn,
 def get_best_attribute(df: pd.DataFrame, metric_fn,
                        class_col: str = "class",
                        missing_attr_val: str = "?",
-                       feature_ratio: float = None, random_state: int = None) -> str:
+                       feature_ratio: float = None,
+                       random_state: int = None) -> str:
     """
     Given a df, return the attribute which gave the highest information gain
     :param df: pandas Dataframe, attributes are columns
