@@ -29,6 +29,7 @@ class DecisionTree:
         self.feature_r = feature_r
         self.metric_fn = metric_fn
         self.alpha = alpha
+        self.depth = 0
 
     def train(self, df: pd.DataFrame, cur_node: TreeNode,
               class_col: str = "class", missing_val="?",
@@ -46,6 +47,8 @@ class DecisionTree:
         :param max_lvls: (TEMPORARY) int, max level of tree
         :return: TreeNode
         """
+        if lvl > self.depth:
+            self.depth = lvl
         n_classes = len(set(df[class_col]))
         if n_classes == 1:
             # examples are homogeneous (all + or all -)
@@ -150,9 +153,10 @@ if __name__ == "__main__":
     df1 = pd.read_csv(pth)
     df_train = df1.drop(columns="id")  # this is important!
     metric = entropy
-    feat_r = 0.01
+    feat_r = 0.25
     dtree = DecisionTree(feat_r, metric, 0.01)
-    dtree.train(df_train, dtree.root)
+    dtree.train(df_train, dtree.root, max_lvls=3)
     print("done train")
     classifications = dtree.classify(df1, dtree.root)
+    print(dtree.depth)
     print(classifications.head())
