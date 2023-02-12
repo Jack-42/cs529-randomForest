@@ -69,6 +69,13 @@ class DecisionTree:
         a_vals = set(df[a])
         if missing_val in a_vals:
             a_vals.remove(missing_val)
+        if len(a_vals) == 0:
+            # default branch
+            nxt_node = TreeNode()
+            cur_node.addBranch("default", nxt_node)
+            nxt_node.target = df[class_col].mode().loc[0]
+            return cur_node
+
         splits_miss_maj, splits_miss_branch = get_splits(df, a,
                                                          missing_attr_val=missing_val)
         chi2 = get_chi2_statistic(df, pd.Series(splits_miss_branch.values()),
@@ -81,6 +88,12 @@ class DecisionTree:
             return cur_node
 
         cur_node.attribute = a
+
+        # default branch
+        nxt_node = TreeNode()
+        cur_node.addBranch("default", nxt_node)
+        nxt_node.target = df[class_col].mode().loc[0]
+
         random_state_new = random_state
         for vi in a_vals:
             nxt_node = TreeNode()
@@ -112,12 +125,6 @@ class DecisionTree:
         splits_miss_maj, splits_miss_branch = get_splits(df, attr,
                                                          missing_attr_val=missing_attr_val)
 
-        def sort_splits(splits):
-            sorted_splits = []
-            for val, split in sorted(splits.items(), key=lambda item: len(item[1]), reverse=True):
-                sorted_splits.append((val, split))
-            return sorted_splits
-
         for val in splits_miss_maj.keys():
             df_val = splits_miss_maj[val]
             if len(df_val) == 0:
@@ -125,16 +132,8 @@ class DecisionTree:
                 continue
             nextNode = cur_node.next(val)
             if nextNode == None:
-                # branch missing, find most common still in tree
-                sorted_splits = sort_splits(splits_miss_maj)
-                for v, s in sorted_splits:
-                    nextNode = cur_node.next(v)
-                    if nextNode != None:
-                        break
-                if nextNode == None:
-                    # pick first as last resort, so deterministic
-                    availVals = cur_node.branchValues()
-                    nextNode = cur_node.next(availVals[0])
+                # branch missing, find default
+                nextNode = cur_node.next("default")
             out = self.classify(df_val, nextNode, id_col=id_col,
                                 class_col=class_col, out=out)
         return out
