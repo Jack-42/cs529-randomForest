@@ -162,24 +162,28 @@ def only_missing(df_h, attr_h, missing_val: str = "?"):
     return True
 
 
+def get_accuracy(predicted: pd.Series, actual: pd.Series) -> float:
+    """
+    Get classification accuracy of predictions
+    :param predicted: pd.Series, predicted values
+    :param actual: pd.Series, actual values
+    :return: float, classification accuracy
+    """
+    assert len(predicted) == len(actual)
+    matches = np.where(predicted == actual)[0]
+    n_correct = matches.shape[0]
+    total = len(actual)
+    return n_correct / total
+
+
 if __name__ == "__main__":
-    pth = "../data/agaricus-lepiota-training.csv"
-    df1 = pd.read_csv(pth)
-    metric = entropy
-    df1 = df1.drop(columns="id")
-    print("Best attr test: ", get_best_attribute(df1, metric))
-    print("chi crit at alpha = 0.1: ", get_chi2_critical(0.1, 10, 15))
-    print("chi crit at alpha = 0.01: ", get_chi2_critical(0.01, 10, 15))
     df_parent = pd.read_csv(
         "C:\\Users\\Jack\\Documents\\School\\Spring 2023\\CS529\\cs529-randomForest\\data\\test.csv")
     df_strong = pd.read_csv(
         "C:\\Users\\Jack\\Documents\\School\\Spring 2023\\CS529\\cs529-randomForest\\data\\test_child.csv")
     df_weak = pd.read_csv(
         "C:\\Users\\Jack\\Documents\\School\\Spring 2023\\CS529\\cs529-randomForest\\data\\test_child2.csv")
-    x = get_chi2_statistic(df_parent, pd.Series([df_weak, df_strong]))
-    print("chi crit at alpha = 0.05: ", get_chi2_critical(0.05, 2, 2))
-    print(x)
-    abs_best = get_best_attribute(df1, metric)
-    small_best = get_best_attribute(df1, metric, feature_ratio=0.5)
-    print(abs_best)
-    print(small_best)
+    print(df_strong)
+    print(df_weak)
+    val = get_accuracy(df_strong["class"], df_weak["class"].iloc[0:6])
+    print(val)
