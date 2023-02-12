@@ -43,8 +43,8 @@ class DecisionTree:
         :param class_col: str, the column containing target attribute vals
         :param missing_val: str, the attribute value representing missing data
         :param random_state: int, seed for feature bagging
-        :param lvl: (TEMPORARY) int, level of tree
-        :param max_lvls: (TEMPORARY) int, max level of tree
+        :param lvl: int, level of tree
+        :param max_lvls: int, max level of tree
         :return: TreeNode
         """
         if lvl > self.depth:
@@ -154,8 +154,8 @@ if __name__ == "__main__":
     df_train = df1.drop(columns="id")  # this is important!
     metric = entropy
     feat_r = 0.25
-    dtree = DecisionTree(feat_r, metric, 0.01)
-    dtree.train(df_train, dtree.root, max_lvls=3)
+    dtree = DecisionTree(feat_r, metric, 0.1)
+    dtree.train(df_train, dtree.root)
     print("done train")
     classifications = dtree.classify(df1, dtree.root)
     print(dtree.depth)
