@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 class Results:
     def __init__(self):
         self.cols = ["feature_r", "metric_fn", "alpha", "bag_r", "tree_count",
@@ -18,5 +17,13 @@ class Results:
         params_entry = {}
         for i in range(len(params)):
             params_entry[self.cols[i]] = params[i]
-        params_entry = pd.DataFrame(params_entry)
-        self.results_df = pd.concat(self.results_df, params_entry)
+        params_entry = pd.DataFrame(params_entry, index=[len(self.results_df)])
+        self.results_df = pd.concat([self.results_df, params_entry])
+
+if __name__ == "__main__":
+    demo_res = Results()
+    print(demo_res.results_df)
+    demo_res.add_entry([0.1, "entropy", 0.95, 0.3, 14, 1, 5, 4, 0.9, 1, 2])
+    print(demo_res.results_df)
+    demo_res.add_entry([0.11, "gini", 0.5, 0.2, 10, 4, 2, 8, 0.7, 3, 4])
+    print(demo_res.results_df)
