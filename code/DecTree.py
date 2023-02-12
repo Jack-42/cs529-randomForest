@@ -3,7 +3,7 @@ import numpy as np
 
 from TreeNode import TreeNode
 from utils import get_best_attribute, get_splits
-from utils import get_chi2_statistic, get_chi2_critical, only_missing
+from utils import get_chi2_statistic, get_chi2_critical, only_missing, get_accuracy
 
 """
 @author: Jack Ringer, Mike Adams
@@ -86,6 +86,7 @@ class DecisionTree:
                                                          missing_attr_val=missing_val)
         chi2 = get_chi2_statistic(df, pd.Series(splits_miss_branch.values()),
                                   missing_attr_val=missing_val)
+        n_classes = len(set((df[df[a] != missing_val])[class_col]))
         chi2_critical = get_chi2_critical(self.alpha, n_classes,
                                           len(a_vals))
         if chi2 < chi2_critical:
@@ -160,3 +161,5 @@ if __name__ == "__main__":
     classifications = dtree.classify(df1, dtree.root)
     print(dtree.depth)
     print(classifications.head())
+    df1 = df1.set_index("id")
+    print("Acc ", get_accuracy(classifications["class"], df1["class"]))
