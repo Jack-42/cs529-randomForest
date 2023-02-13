@@ -45,6 +45,19 @@ class RandomForest:
             tree = DecisionTree(self.feature_r, self.metric_fn, self.alpha)
             self.trees.append(tree)
 
+    def avg_tree_depth(self) -> float:
+        sum = 0
+        for t in self.trees:
+            sum += t.depth
+        return sum / len(self.trees)
+
+    def max_tree_depth(self) -> int:
+        max = -1
+        for t in self.trees:
+            if t.depth > max:
+                max = t.depth
+        return max
+
     def train(self, df: pd.DataFrame, class_col: str = "class",
               missing_val: str = "?"):
         for i in range(self.tree_count):
