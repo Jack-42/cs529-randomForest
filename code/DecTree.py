@@ -126,10 +126,20 @@ class DecisionTree:
             out = df[[id_col]].copy(deep=True)
             out[class_col] = ""
             out = out.set_index(id_col)
+
         if cur_node.isLeaf():
             out.loc[df[id_col]] = cur_node.target
             return out
+
         attr = cur_node.attribute
+        a_vals = set(df[attr])
+        if missing_attr_val in a_vals:
+            a_vals.remove(missing_attr_val)
+        if len(a_vals) == 0:
+            out = self.classify(df, cur_node.next("default"), id_col=id_col,
+                                class_col=class_col, missing_attr_val=missing_attr_val, out=out)
+            return out
+        
         splits_miss_maj, splits_miss_branch = get_splits(df, attr,
                                                          missing_attr_val=missing_attr_val)
 
@@ -143,7 +153,7 @@ class DecisionTree:
                 # branch missing, find default
                 next_node = cur_node.next("default")
             out = self.classify(df_val, next_node, id_col=id_col,
-                                class_col=class_col, out=out)
+                                class_col=class_col, missing_attr_val=missing_attr_val, out=out)
         return out
 
 
