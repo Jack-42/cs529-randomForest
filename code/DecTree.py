@@ -30,6 +30,7 @@ class DecisionTree:
         self.metric_fn = metric_fn
         self.alpha = alpha
         self.depth = 0
+        self.top_feature = ""
 
     def train(self, df: pd.DataFrame, cur_node: TreeNode,
               class_col: str = "class", missing_val="?",
@@ -72,6 +73,10 @@ class DecisionTree:
                                missing_attr_val=missing_val,
                                feature_ratio=self.feature_r,
                                random_state=random_state)
+
+        if lvl == 0:
+            self.top_feature = a
+
         a_vals = set(df[a])
         if missing_val in a_vals:
             a_vals.remove(missing_val)

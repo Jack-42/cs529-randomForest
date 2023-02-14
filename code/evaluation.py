@@ -22,5 +22,5 @@ def main(csv_path: str, acc_col: str = "accuracy"):
 
 
 if __name__ == "__main__":
-    results_pth = "../data/test_jack.csv"
+    results_pth = "../data/grid_searchmike.csv"
     main(results_pth)

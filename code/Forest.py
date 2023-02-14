@@ -58,6 +58,22 @@ class RandomForest:
                 max = t.depth
         return max
 
+    def most_common_top_feature(self) -> str:
+        d = {}
+        for t in self.trees:
+            top = t.top_feature
+            if top in d:
+                d[top] = 1 + d[top]
+            else:
+                d[top] = 1
+        max_feat = ""
+        max_count = 0
+        for feat in d:
+            if d[feat] > max_count:
+                max_count = d[feat]
+                max_feat = feat
+        return max_feat
+
     def train(self, df: pd.DataFrame, class_col: str = "class",
               missing_val: str = "?"):
         for i in range(self.tree_count):
