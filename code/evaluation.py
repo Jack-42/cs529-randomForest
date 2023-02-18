@@ -27,6 +27,14 @@ def main(csv_path: str, acc_col: str = "accuracy"):
     print("metric fn avg acc ", results_df.groupby(["metric_fn"])["accuracy"].mean())
     print("metric fn min acc ", results_df.groupby(["metric_fn"])["accuracy"].min())
     print("metric fn max acc ", results_df.groupby(["metric_fn"])["accuracy"].max())
+    
+    print("metric fn avg avg depth ", results_df.groupby(["metric_fn"])["avg_depth"].mean())
+    print("metric fn min avg depth ", results_df.groupby(["metric_fn"])["avg_depth"].min())
+    print("metric fn max avg depth  ", results_df.groupby(["metric_fn"])["avg_depth"].max())
+
+    print("metric fn avg mav depth ", results_df.groupby(["metric_fn"])["max_depth"].mean())
+    print("metric fn min max depth ", results_df.groupby(["metric_fn"])["max_depth"].min())
+    print("metric fn max max depth  ", results_df.groupby(["metric_fn"])["max_depth"].max())
 
     print("bag_r avg acc ", results_df.groupby(["bag_r"])["accuracy"].mean())
     print("bag_r min acc ", results_df.groupby(["bag_r"])["accuracy"].min())
