@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 if __name__ == "__main__":
-    font = {'family' : 'normal',
-        'weight' : 'normal',
-        'size'   : 5}
+    font = {'family': 'normal',
+            'weight': 'normal',
+            'size': 5}
 
     matplotlib.rc('font', **font)
 

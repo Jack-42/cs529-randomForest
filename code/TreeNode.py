@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+
 class TreeNode:
 
     def __init__(self, target, attribute):

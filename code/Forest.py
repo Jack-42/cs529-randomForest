@@ -129,21 +129,23 @@ if __name__ == "__main__":
     pth = "../data/agaricus-lepiota-training.csv"
     df1 = pd.read_csv(pth)
     df_train = df1.drop(columns="id")
-    feat_r = 0.01
+    feat_r = 0.3
     metric = entropy
-    alpha = 0.01
-    bag_r = 0.4
+    alpha = 0.05
+    bag_r = 0.6
     tree_count = 10
-    seed_for_bag_seed_generator = None  # random
-    seed_for_feat_bag_seed_generator = None  # random
+    seed_for_bag_seed_generator = 42
+    seed_for_feat_bag_seed_generator = 42
     rf = RandomForest(feat_r, metric, alpha, bag_r, tree_count,
                       seed_for_bag_seed_generator,
                       seed_for_feat_bag_seed_generator)
     rf.train(df_train)
+    print(len(df_train))
     classifications = rf.classify(df1)
-    print(classifications.head())
 
     pth2 = "../data/agaricus-lepiota-testing.csv"
     dftest = pd.read_csv(pth2)
+    print(len(dftest))
     classifications_test = rf.classify(dftest)
-    print(classifications_test.head())
+    save_pth = "../data/agaricus-lepiota-test_out.csv"
+    classifications_test.to_csv(save_pth)

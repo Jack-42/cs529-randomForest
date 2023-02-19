@@ -3,7 +3,8 @@ import numpy as np
 
 from TreeNode import TreeNode
 from utils import get_best_attribute, get_splits
-from utils import get_chi2_statistic, get_chi2_critical, only_missing, get_accuracy
+from utils import get_chi2_statistic, get_chi2_critical, only_missing, \
+    get_accuracy
 
 """
 @author: Jack Ringer, Mike Adams
@@ -142,9 +143,10 @@ class DecisionTree:
             a_vals.remove(missing_attr_val)
         if len(a_vals) == 0:
             out = self.classify(df, cur_node.next("default"), id_col=id_col,
-                                class_col=class_col, missing_attr_val=missing_attr_val, out=out)
+                                class_col=class_col,
+                                missing_attr_val=missing_attr_val, out=out)
             return out
-        
+
         splits_miss_maj, splits_miss_branch = get_splits(df, attr,
                                                          missing_attr_val=missing_attr_val)
 
@@ -158,7 +160,8 @@ class DecisionTree:
                 # branch missing, find default
                 next_node = cur_node.next("default")
             out = self.classify(df_val, next_node, id_col=id_col,
-                                class_col=class_col, missing_attr_val=missing_attr_val, out=out)
+                                class_col=class_col,
+                                missing_attr_val=missing_attr_val, out=out)
         return out
 
 
